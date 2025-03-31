@@ -17,15 +17,13 @@ options.add_argument('--disable-dev-shm-usage')
 options.add_argument("--start-maximized")
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
 
-# Inicialización del driver
 service = ChromeService(executable_path="./src/chromedriver.exe")
 driver = webdriver.Chrome(service=service, options=options)
 wait = WebDriverWait(driver, 10)
 
-# Paso 1: Ir a Computrabajo Colombia
 driver.get("https://co.computrabajo.com")
 
-# Paso 2: Aceptar cookies si aparece
+# Aceptar cookies
 try:
     aceptar = WebDriverWait(driver, 5).until(
         EC.element_to_be_clickable((By.XPATH, '//button[contains(text(),"Acepto")]'))
@@ -35,7 +33,7 @@ try:
 except:
     print("❕ No apareció el banner de cookies.")
 
-# Paso 3: Escribir "ciencia de datos" y hacer búsqueda
+# Buscar "ciencia de datos"
 try:
     campo_busqueda = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Cargo o categoría"]')))
     campo_busqueda.clear()
@@ -47,7 +45,7 @@ except Exception as e:
     driver.quit()
     exit()
 
-# Paso 4: Cerrar popup de notificaciones si aparece
+# Cerrar popup de notificaciones si aparece
 try:
     time.sleep(3)
     popup_btn = driver.find_element(By.XPATH, '//button[contains(text(),"Ahora no")]')
@@ -56,52 +54,73 @@ try:
 except:
     print("❕ No apareció popup de notificaciones")
 
-# Paso 5: Extraer info de ofertas
+# Extraer tarjetas de ofertas
 ofertas_extraidas = []
 
 try:
-    # 🟡 CAMBIO AQUÍ: Usamos "box_offer" en lugar de "bRS"
     tarjetas = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "box_offer")))
     print(f"\n🟡 Se encontraron {len(tarjetas)} ofertas en la primera página.\n")
 
     for tarjeta in tarjetas:
         try:
-            try:
-                titulo = tarjeta.find_element(By.CLASS_NAME, "js-o-link").text
-            except:
-                titulo = "No especificado"
+            titulo = tarjeta.find_element(By.CLASS_NAME, "js-o-link").text
+            link = tarjeta.find_element(By.CLASS_NAME, "js-o-link").get_attribute("href")
+            empresa = tarjeta.find_element(By.CLASS_NAME, "dNm").text if tarjeta.find_elements(By.CLASS_NAME, "dNm") else "No especificado"
+            ubicacion = tarjeta.find_element(By.CLASS_NAME, "dis-block").text if tarjeta.find_elements(By.CLASS_NAME, "dis-block") else "No especificado"
+
+            # 🔽 Entrar al detalle de la oferta
+            driver.execute_script("window.open('');")
+            driver.switch_to.window(driver.window_handles[1])
+            driver.get(link)
+            time.sleep(2)
 
             try:
-                empresa = tarjeta.find_element(By.CLASS_NAME, "dNm").text
+                salario = driver.find_element(By.XPATH, '//span[contains(text(),"$")]').text
             except:
-                empresa = "No especificado"
+                salario = "No especificado"
 
             try:
-                ubicacion = tarjeta.find_element(By.CLASS_NAME, "dis-block").text
+                tipo_contrato = driver.find_element(By.XPATH, '//span[contains(text(),"Contrato")]').text
             except:
-                ubicacion = "No especificado"
+                tipo_contrato = "No especificado"
 
             try:
-                link = tarjeta.find_element(By.CLASS_NAME, "js-o-link").get_attribute("href")
+                modalidad = driver.find_element(By.XPATH, '//span[contains(text(),"Presencial") or contains(text(),"Remoto") or contains(text(),"Híbrido")]').text
             except:
-                link = "No especificado"
+                modalidad = "No especificado"
 
+            try:
+                descripcion = driver.find_element(By.CLASS_NAME, "box_detail").text
+                habilidades = "\n".join([line.strip() for line in descripcion.splitlines() if "Habilidad" in line or "Conocimiento" in line])
+            except:
+                habilidades = "No especificado"
+
+            # Cerrar la pestaña del detalle
+            driver.close()
+            driver.switch_to.window(driver.window_handles[0])
+
+            # Guardar la oferta
             ofertas_extraidas.append({
                 "titulo": titulo,
                 "empresa": empresa,
                 "ubicacion": ubicacion,
-                "link": link
+                "link": link,
+                "salario": salario,
+                "tipo_contrato": tipo_contrato,
+                "modalidad": modalidad,
+                "habilidades": habilidades
             })
 
-            print(f"Título: {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nLink: {link}\n{'-'*40}")
-            time.sleep(random.uniform(1.0, 1.8))
+            print(f"✅ {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nContrato: {tipo_contrato}\nModalidad: {modalidad}\nSalario: {salario}\nLink: {link}\n{'-'*60}")
+            time.sleep(random.uniform(1.0, 1.5))
+
         except Exception as e:
-            print("⚠ Error general al procesar una oferta:", e)
+            print("⚠ Error al procesar una oferta:", e)
 
 except Exception as e:
     print("❌ Error al cargar ofertas:", type(e).__name__, e)
 
-# Paso 6: Guardar CSV
+# Guardar CSV
 if ofertas_extraidas:
     with open("ofertas_ciencia_datos_colombia.csv", "w", newline='', encoding="utf-8") as archivo:
         campos = ofertas_extraidas[0].keys()
@@ -112,5 +131,4 @@ if ofertas_extraidas:
 else:
     print("\n⚠ No se extrajo ninguna oferta.")
 
-# Cerrar driver
 driver.quit()
