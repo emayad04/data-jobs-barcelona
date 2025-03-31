@@ -8,4 +8,6 @@ Este proyecto tiene como objetivo la creación de un dataset a partir de datos o
 - Habilidades requeridas
 - Fecha de publicación
 Este conjunto de datos permitirá analizar el estado actual del mercado laboral en el área de ciencia de datos en Barcelona, con el fin de identificar tendencias, habilidades más demandadas, y condiciones laborales ofrecidas.
+El proyecto está estructurado en Python, y utiliza bibliotecas como requests, BeautifulSoup y pandas. El código fuente se encuentra en la carpeta /source, y el dataset generado en formato CSV en la carpeta /dataset.
+
 
