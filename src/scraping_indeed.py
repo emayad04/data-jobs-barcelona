@@ -14,15 +14,13 @@ options = Options()
 options.add_argument('--disable-gpu')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-# Ejecuta sin modo headless para ver la interacción
-# options.add_argument('--headless=new')
 options.add_argument("--start-maximized")
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
 
 # Inicialización del driver
 service = ChromeService(executable_path="./src/chromedriver.exe")
 driver = webdriver.Chrome(service=service, options=options)
-wait = WebDriverWait(driver, 15)
+wait = WebDriverWait(driver, 10)
 
 # Paso 1: Ir a Computrabajo Colombia
 driver.get("https://co.computrabajo.com")
@@ -37,14 +35,13 @@ try:
 except:
     print("❕ No apareció el banner de cookies.")
 
-# Paso 3: Escribir "ciencia de datos" en campo de búsqueda
+# Paso 3: Escribir "ciencia de datos" y hacer búsqueda
 try:
     campo_busqueda = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Cargo o categoría"]')))
     campo_busqueda.clear()
     campo_busqueda.send_keys("ciencia de datos")
     campo_busqueda.send_keys(Keys.ENTER)
     print("🔍 Búsqueda enviada (con ENTER)")
-    time.sleep(2)
 except Exception as e:
     print("❌ Error en búsqueda:", type(e).__name__, e)
     driver.quit()
@@ -61,16 +58,33 @@ except:
 
 # Paso 5: Extraer info de ofertas
 ofertas_extraidas = []
-try:
-    lista_ofertas = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "bRS")))
-    print(f"\n🟡 Se encontraron {len(lista_ofertas)} ofertas en la primera página.\n")
 
-    for oferta in lista_ofertas:
+try:
+    # 🟡 CAMBIO AQUÍ: Usamos "box_offer" en lugar de "bRS"
+    tarjetas = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "box_offer")))
+    print(f"\n🟡 Se encontraron {len(tarjetas)} ofertas en la primera página.\n")
+
+    for tarjeta in tarjetas:
         try:
-            titulo = oferta.find_element(By.CLASS_NAME, "js-o-link").text
-            empresa = oferta.find_element(By.CLASS_NAME, "dNm").text
-            ubicacion = oferta.find_element(By.CLASS_NAME, "dis-block").text
-            link = oferta.find_element(By.CLASS_NAME, "js-o-link").get_attribute("href")
+            try:
+                titulo = tarjeta.find_element(By.CLASS_NAME, "js-o-link").text
+            except:
+                titulo = "No especificado"
+
+            try:
+                empresa = tarjeta.find_element(By.CLASS_NAME, "dNm").text
+            except:
+                empresa = "No especificado"
+
+            try:
+                ubicacion = tarjeta.find_element(By.CLASS_NAME, "dis-block").text
+            except:
+                ubicacion = "No especificado"
+
+            try:
+                link = tarjeta.find_element(By.CLASS_NAME, "js-o-link").get_attribute("href")
+            except:
+                link = "No especificado"
 
             ofertas_extraidas.append({
                 "titulo": titulo,
@@ -80,13 +94,12 @@ try:
             })
 
             print(f"Título: {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nLink: {link}\n{'-'*40}")
-            time.sleep(random.uniform(1.5, 2.5))
-
+            time.sleep(random.uniform(1.0, 1.8))
         except Exception as e:
-            print("Error al procesar una oferta:", e)
+            print("⚠ Error general al procesar una oferta:", e)
 
 except Exception as e:
-    print("❌ Error al cargar ofertas:", e)
+    print("❌ Error al cargar ofertas:", type(e).__name__, e)
 
 # Paso 6: Guardar CSV
 if ofertas_extraidas:
