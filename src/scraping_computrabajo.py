@@ -40,7 +40,7 @@ except:
 try:
     campo_busqueda = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Cargo o categoría"]')))
     campo_busqueda.clear()
-    campo_busqueda.send_keys("ciencia de datos")
+    campo_busqueda.send_keys("data sciencie")
     campo_busqueda.send_keys(Keys.ENTER)
     print("🔍 Búsqueda enviada (con ENTER)")
 except Exception as e:
@@ -62,7 +62,7 @@ ofertas_extraidas = []
 
 try:
     tarjetas = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "box_offer")))
-    print(f"\n🟡 Se encontraron {len(tarjetas)} ofertas en la primera página.\n")
+    print(f"\Se encontraron {len(tarjetas)} ofertas en la primera página.\n")
 
     for tarjeta in tarjetas:
         try:
