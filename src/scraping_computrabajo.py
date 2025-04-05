@@ -110,13 +110,8 @@ try:
     
             #Extraemos detalle de los requisitos del puesto
             try:
-                #David parte facil
-                Rquerimientos = driver.find_element(By.CSS_SELECTOR, "ul.disc.mbB").text
-                #print(Rquerimientos)
 
-                
                 #David
-                print("-----------------------------------------------------------------")
                 HTMLdescripcionD = driver.find_element(By.CSS_SELECTOR, "p.mbB").text
                 LineasCuerpo = HTMLdescripcionD.splitlines()
 
@@ -145,12 +140,6 @@ try:
 
                     if capturando_requisitos:
                         requisitos_oferta += linea + "\n"  # Agregamos la línea al contenido
-
-                #eli
-                descripcion = driver.find_element(By.CLASS_NAME, "box_detail").text
-                requisitos = "\n".join([line.strip() for line in descripcion.splitlines() if "requisito" in line.lower() or "requerim" in line.lower()])
-                if not requisitos:
-                    requisitos = "No especificado"
                     
             except:
                 requisitos = "No especificado"
@@ -184,8 +173,7 @@ try:
                 "fecha_publicacion": fecha_publicacion
             })
 
-            #print(f"✅ {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nContrato: {tipo_contrato}\nModalidad: {modalidad}\nSalario: {salario}\nFecha: {fecha_publicacion}\nLink: {link}\n{'-'*60}")
-            print("--------------------------------------")      
+            print(f"✅ {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nContrato: {tipo_contrato}\nModalidad: {modalidad}\nSalario: {salario}\nFecha: {fecha_publicacion}\nLink: {link}\n{'-'*60}")
             time.sleep(random.uniform(1.0, 1.5))
 
         except Exception as e:
