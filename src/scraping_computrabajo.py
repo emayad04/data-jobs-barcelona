@@ -59,7 +59,6 @@ except:
 
 # Extraer tarjetas de ofertas
 ofertas_extraidas = []
-
 try:
     tarjetas = wait.until(EC.presence_of_all_elements_located((By.CLASS_NAME, "box_offer")))
     print(f"\Se encontraron {len(tarjetas)} ofertas en la primera página.\n")
