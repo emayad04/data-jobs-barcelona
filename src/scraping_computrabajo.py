@@ -40,7 +40,7 @@ except:
 try:
     campo_busqueda = wait.until(EC.presence_of_element_located((By.XPATH, '//input[@placeholder="Cargo o categoría"]')))
     campo_busqueda.clear()
-    campo_busqueda.send_keys("data sciencie")
+    campo_busqueda.send_keys("data science")
     campo_busqueda.send_keys(Keys.ENTER)
     print("🔍 Búsqueda enviada (con ENTER)")
 except Exception as e:
@@ -66,18 +66,25 @@ try:
 
     for tarjeta in tarjetas:
         try:
+            #Extraemos detalle del nombre de la posicion y el link
             try:
                 titulo = tarjeta.find_element(By.CLASS_NAME, "js-o-link").text
                 link = tarjeta.find_element(By.CLASS_NAME, "js-o-link").get_attribute("href")
             except:
                 titulo, link = "No especificado", "No especificado"
 
+            #Extraemos detalle del tipo de contrato
             try:
-                empresa_ubicacion = tarjeta.find_element(By.CLASS_NAME, "fs16").text.split("\n")
-                empresa = empresa_ubicacion[1] if len(empresa_ubicacion) > 1 else "No especificado"
-                ubicacion = empresa_ubicacion[2] if len(empresa_ubicacion) > 2 else "No especificado"
+                tipo_contrato = tarjeta.find_element(By.XPATH, '//p[span[contains(@class, "i_find")]]').text
             except:
-                empresa, ubicacion = "No especificado", "No especificado"
+                tipo_contrato = "No especificado"
+
+            #Extraemos detalle de la modalidad
+            try:
+                modalidad = driver.find_element(By.XPATH, '//p[span[contains(@class, "i_company")]]').text
+
+            except:
+                modalidad = "No especificado"
 
             # 🔽 Entrar al detalle de la oferta
             driver.execute_script("window.open('');")
@@ -85,26 +92,66 @@ try:
             driver.get(link)
             time.sleep(2)
 
+            #Extraemos detalle de la empresa
+            try:
+                empresa_ubicacion = driver.find_element(By.XPATH, '//div[@class="container"]/p[@class="fs16"]').text.split(" - ")
+
+                empresa = empresa_ubicacion[0] 
+                ubicacion = empresa_ubicacion[1] 
+
+            except:
+                empresa, ubicacion = "No especificado", "No especificado"
+
+            #Extraemos detalle del salario
             try:
                 salario = driver.find_element(By.XPATH, '//span[contains(text(),"$")]').text
             except:
                 salario = "No especificado"
-
+    
+            #Extraemos detalle de los requisitos del puesto
             try:
-                tipo_contrato = driver.find_element(By.XPATH, '//span[contains(text(),"Contrato")]').text
-            except:
-                tipo_contrato = "No especificado"
+                #David parte facil
+                Rquerimientos = driver.find_element(By.CSS_SELECTOR, "ul.disc.mbB").text
+                #print(Rquerimientos)
 
-            try:
-                modalidad = driver.find_element(By.XPATH, '//span[contains(text(),"Presencial") or contains(text(),"Remoto") or contains(text(),"Híbrido")]').text
-            except:
-                modalidad = "No especificado"
+                
+                #David
+                print("-----------------------------------------------------------------")
+                HTMLdescripcionD = driver.find_element(By.CSS_SELECTOR, "p.mbB").text
+                LineasCuerpo = HTMLdescripcionD.splitlines()
 
-            try:
+                num_encabezado = 0 
+                requisitos_oferta = ""
+                capturando_requisitos = False
+
+                palabras_clave = [
+                    r"\bRequisit\w*\b",  # Coincide con "Requisit", "Requisito", "Requisitos", etc.
+                    r"\bHabilidad\w*\b",  # Coincide con "Habilidad", "Habilidades", etc.
+                    r"\bEstudio\w*\b",    # Coincide con "Estudio", "Estudios", etc.
+                    r"\bConocimiento\w*\b",  # Coincide con "Conocimiento", "Conocimientos", etc.
+                    r"\bQualification\w*\b",  # Coincide con "Qualification", "Qualifications", etc.
+                    r"\bSkill\w*\b",  # Coincide con "Skill", "Skills", etc.
+                    r"\bLooking for\b",  # Exacta coincidencia con "Looking for"
+                    r"\bBusca\w*\b"  # Coincide con "Busca", "Buscamos", etc.
+                ]
+
+                for linea in LineasCuerpo:
+                    if re.match(r"^\s*[\w\s¿¡\?\!\.\,\-\&\(\)\'\"\/]*\s*[:]\s*$", linea) or linea.strip().isupper():
+                        if any(re.search(palabra, linea, re.IGNORECASE) for palabra in palabras_clave):
+                            capturando_requisitos = True
+                            #print("Encabezado detectado:", linea)
+                        else:
+                            capturando_requisitos = False
+
+                    if capturando_requisitos:
+                        requisitos_oferta += linea + "\n"  # Agregamos la línea al contenido
+
+                #eli
                 descripcion = driver.find_element(By.CLASS_NAME, "box_detail").text
                 requisitos = "\n".join([line.strip() for line in descripcion.splitlines() if "requisito" in line.lower() or "requerim" in line.lower()])
                 if not requisitos:
                     requisitos = "No especificado"
+                    
             except:
                 requisitos = "No especificado"
 
@@ -133,11 +180,12 @@ try:
                 "salario": salario,
                 "tipo_contrato": tipo_contrato,
                 "modalidad": modalidad,
-                "requisitos": requisitos,
+                "requisitos": requisitos_oferta,
                 "fecha_publicacion": fecha_publicacion
             })
 
-            print(f"✅ {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nContrato: {tipo_contrato}\nModalidad: {modalidad}\nSalario: {salario}\nFecha: {fecha_publicacion}\nLink: {link}\n{'-'*60}")
+            #print(f"✅ {titulo}\nEmpresa: {empresa}\nUbicación: {ubicacion}\nContrato: {tipo_contrato}\nModalidad: {modalidad}\nSalario: {salario}\nFecha: {fecha_publicacion}\nLink: {link}\n{'-'*60}")
+            print("--------------------------------------")      
             time.sleep(random.uniform(1.0, 1.5))
 
         except Exception as e:
